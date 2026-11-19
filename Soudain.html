@@ -1,0 +1,526 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Soudain</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;1,6..96,500&amp;family=Jost:wght@400;500;600&amp;display=swap">
+<style>
+/* Layout: owner bar (owner only), sticky brand bar, category chips, 2-up product grid; detail sheet, bag and manage panels rise from the bottom on phones and sit right on desktop. */
+:root{
+  --bg:#F4ECDF; --surface:#FBF7F0; --ink:#1E1A17; --muted:#756857; --line:#DFD2BE;
+  --accent:#8C6F4A; --accent-ink:#FFFFFF; --bad:#B3261E;
+  --t1:#E9DCC6; --t2:#DFCEB4; --t3:#EFE4D2; --t4:#D6C3A5; --t5:#E4D5BD;
+  --font-display:"Bodoni Moda",Didot,Georgia,serif; --font-body:"Jost",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1C1814; --surface:#26211B; --ink:#F3EBDD; --muted:#B5A590; --line:#3B332A;
+  --accent:#C9A877; --accent-ink:#1C1814; --bad:#FF8A80;
+  --t1:#3A3228; --t2:#43392C; --t3:#332C24; --t4:#4A3E2F; --t5:#3D342A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1814; --surface:#26211B; --ink:#F3EBDD; --muted:#B5A590; --line:#3B332A;
+  --accent:#C9A877; --accent-ink:#1C1814; --bad:#FF8A80;
+  --t1:#3A3228; --t2:#43392C; --t3:#332C24; --t4:#4A3E2F; --t5:#3D342A; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1040px;margin:0 auto}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.ownerbar{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:0 0 8px 8px;font-size:13px}
+.ownerbar button{background:var(--bg);color:var(--ink);border:0;border-radius:999px;padding:6px 14px;font-weight:500}
+
+header.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.brand{font-family:var(--font-display);font-size:26px;letter-spacing:.01em;line-height:1;min-width:0}
+.brand small{display:block;font-family:var(--font-body);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:5px}
+.bagbtn{display:flex;align-items:center;gap:8px;border:1px solid var(--ink);background:transparent;border-radius:999px;padding:9px 16px;font-weight:500;flex:none}
+.bagbtn .n{background:var(--accent);color:var(--accent-ink);border-radius:999px;min-width:22px;height:22px;padding:0 6px;display:inline-grid;place-items:center;font-size:12px}
+
+.intro{padding:28px 0 8px;display:flex;flex-wrap:wrap;gap:8px 32px;align-items:end;justify-content:space-between}
+.intro h1{font-family:var(--font-display);font-weight:500;font-size:clamp(30px,6vw,52px);line-height:1.05;margin:0;max-width:16ch;text-wrap:balance}
+.intro p{margin:0;color:var(--muted);max-width:34ch}
+
+.chips{display:flex;gap:8px;overflow-x:auto;padding:18px 0 16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 16px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:20px 12px}
+.card{display:flex;flex-direction:column;gap:8px;text-align:left;background:none;border:0;padding:0;min-width:0}
+.tile{aspect-ratio:4/5;border-radius:6px;display:grid;place-items:center;position:relative;overflow:hidden;max-width:100%}
+.tile svg{width:46%;height:auto;stroke:var(--ink);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;opacity:.55}
+.tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.tile .tag{position:absolute;left:8px;top:8px;background:var(--surface);color:var(--ink);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
+.card:hover .tile{filter:brightness(.97)}
+.card h3{margin:0;font-weight:500;font-size:15px;line-height:1.3}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.price{font-variant-numeric:tabular-nums;font-weight:500}
+.dots{display:flex;gap:4px}
+.dot{width:11px;height:11px;border-radius:50%;border:1px solid var(--line);display:inline-block}
+.empty{padding:40px 0;color:var(--muted)}
+
+.how{margin-top:44px;padding-top:24px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px}
+.how h4{margin:0 0 4px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.how p{margin:0;color:var(--muted)}
+footer{margin-top:28px;color:var(--muted);font-size:13px}
+
+.scrim{position:fixed;inset:0;background:rgba(20,10,22,.5);z-index:20}
+.panel{position:fixed;z-index:21;background:var(--surface);color:var(--ink);left:0;right:0;bottom:0;max-height:92%;overflow-y:auto;border-radius:16px 16px 0 0;
+  padding:20px max(20px,env(safe-area-inset-left,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px))}
+@media (min-width:720px){.panel{left:auto;top:0;max-height:none;width:460px;border-radius:0;padding-top:calc(20px + env(safe-area-inset-top,0px))}
+  .panel.sheet{left:50%;right:auto;top:50%;bottom:auto;transform:translate(-50%,-50%);max-height:90%;border-radius:12px}}
+.panel h2{font-family:var(--font-display);font-weight:500;font-size:26px;margin:0 0 4px;line-height:1.15;padding-right:40px}
+.x{position:absolute;right:max(14px,env(safe-area-inset-right,0px));top:12px;border:0;background:var(--bg);width:34px;height:34px;border-radius:50%;font-size:18px;line-height:1}
+.sheet .tile{aspect-ratio:4/3;margin-bottom:14px}
+.sheet .tile svg{width:22%}
+.lbl{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:1px solid var(--line);background:transparent;border-radius:6px;padding:8px 14px;min-width:44px}
+.opt[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.swatch{display:inline-flex;align-items:center;gap:8px}
+.btn{display:block;width:100%;text-align:center;text-decoration:none;border:0;border-radius:6px;background:var(--accent);color:var(--accent-ink);padding:14px 18px;font-weight:600;font-size:15px;margin-top:18px}
+.btn.alt{background:transparent;color:var(--ink);border:1px solid var(--line);margin-top:10px;font-weight:500}
+.btn.danger,.mini.danger{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+.btn[aria-disabled="true"],.btn:disabled{opacity:.45;pointer-events:none}
+.mini{border:1px solid var(--line);background:transparent;border-radius:6px;padding:6px 12px;font-size:13px}
+
+.line{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.line .tile{aspect-ratio:1;border-radius:4px}.line .tile svg{width:55%}
+.line b{font-weight:500}.line small{display:block;color:var(--muted)}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:6px;margin-top:6px}
+.qty button{border:0;background:none;width:30px;height:28px;font-size:16px}
+.qty span{min-width:24px;text-align:center;font-variant-numeric:tabular-nums}
+.sum{display:grid;gap:4px;padding:14px 0}
+.sum div{display:flex;justify-content:space-between;color:var(--muted)}
+.sum .tot{color:var(--ink);font-weight:600;font-size:17px;padding-top:6px}
+label.f{display:block;margin-top:12px;font-size:13px;color:var(--muted)}
+input,textarea,select{display:block;width:100%;margin-top:4px;padding:11px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+input[type=checkbox]{display:inline-block;width:auto;margin:0 10px 0 0}
+.chk{display:flex;align-items:center;margin-top:14px;font-size:14px}
+.note{font-size:13px;color:var(--muted);margin-top:10px}
+.err{color:var(--bad);font-size:14px;margin-top:12px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;z-index:30;font-size:14px;max-width:90%;text-align:center}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.two .btn{margin-top:14px}
+.notice{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;margin-top:14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:14px}
+.crow{display:grid;grid-template-columns:44px 1fr 34px;gap:8px;align-items:center;margin-top:8px}
+.crow input,.crow button{margin:0}
+.crow input[type=color]{padding:2px;height:42px}
+.crow button{border:0;background:var(--bg);height:34px;border-radius:50%}
+.photo{display:flex;gap:12px;align-items:center;margin-top:6px}
+.photo .tile{width:84px;flex:none;aspect-ratio:1}
+.photo .tile svg{width:50%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sizes{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+</style>
+
+<div class="wrap">
+  <div class="ownerbar" id="ownerbar" hidden=""><span>Admin mode. Only you can see this bar.</span><button id="openManage">Open admin</button></div>
+  <header class="bar">
+    <div class="brand" id="brand"><span id="bn">Soudain</span><small id="tagline"></small></div>
+    <button class="bagbtn" id="openBag" aria-label="Open your bag">Bag <span class="n" id="count">0</span></button>
+  </header>
+
+  <section class="intro">
+    <h1 id="headline"></h1>
+    <p id="introp"></p>
+  </section>
+
+  <nav class="chips" id="chips" aria-label="Categories"></nav>
+  <main class="grid" id="grid"></main>
+
+  <section class="how">
+    <div><h4>Order</h4><p>Fill your bag, enter your delivery details and tap send. Your order opens in WhatsApp ready to go.</p></div>
+    <div><h4>Confirm</h4><p>We reply to confirm sizes, colors and the delivery day for your area.</p></div>
+    <div><h4>Receive</h4><p id="policy"></p></div>
+  </section>
+  <footer id="footnote"></footer>
+</div>
+
+<div id="layer"></div>
+
+<script type="application/json" id="shop-data">{"v":1,"shop":{"name":"Soudain","tagline":"Lingerie & home textiles","headline":"Clothing Store","intro":"Lingerie, pyjamas, robes and towels. Pick what you like, send your order on WhatsApp, pay on delivery.","policy":"Pay in cash or by transfer when your parcel arrives. Exchanges within 4 days, unworn with tags.","whatsapp":"96170174713","whatsappShown":"+961 70 174 713","instagram":"soudain.lb","currency":"$","deliveryFee":3,"freeOver":0},"categories":["Lingerie","Pyjamas","Robes","Towels","Bath & home"],"products":[{"id":"s2","cat":"Lingerie","name":"Everyday Cotton Briefs (3 pack)","price":16,"tag":"","sizes":["XS","S","M","L","XL"],"colors":[{"name":"Ivory","hex":"#F1E8DC"},{"name":"Black","hex":"#2B2428"},{"name":"Blush","hex":"#E8B7C8"}],"desc":"Breathable combed cotton, flat seams, full coverage. Pack of three in one color.","img":"","soldOut":false,"sample":true},{"id":"s3","cat":"Lingerie","name":"Satin Slip Chemise","price":34,"tag":"Bestseller","sizes":["XS","S","M","L","XL"],"colors":[{"name":"Plum","hex":"#7B3F61"},{"name":"Black","hex":"#2B2428"},{"name":"Blush","hex":"#E8B7C8"}],"desc":"Fluid satin with adjustable straps and a short lace trim at the hem.","img":"","soldOut":false,"sample":true},{"id":"s4","cat":"Lingerie","name":"Seamless Comfort Bra","price":22,"tag":"","sizes":["S","M","L","XL"],"colors":[{"name":"Ivory","hex":"#F1E8DC"},{"name":"Black","hex":"#2B2428"},{"name":"Sand","hex":"#D9C4A8"}],"desc":"One-piece seamless knit, smooth under tops, removable pads.","img":"","soldOut":false,"sample":true},{"id":"s5","cat":"Pyjamas","name":"Cotton Button-Up Pyjama Set","price":38,"tag":"","sizes":["XS","S","M","L","XL"],"colors":[{"name":"Sky","hex":"#B9CCE0"},{"name":"Sage","hex":"#A9BDA6"},{"name":"Blush","hex":"#E8B7C8"}],"desc":"Long-sleeve shirt and trousers in brushed cotton. Piped edges, elastic waist.","img":"","soldOut":false,"sample":true},{"id":"s6","cat":"Pyjamas","name":"Satin Shorts Pyjama Set","price":32,"tag":"New","sizes":["XS","S","M","L","XL"],"colors":[{"name":"Rose","hex":"#D9858F"},{"name":"Black","hex":"#2B2428"},{"name":"Ivory","hex":"#F1E8DC"}],"desc":"Camisole top with shorts in washable satin. Cool and light for summer nights.","img":"","soldOut":false,"sample":true},{"id":"s7","cat":"Pyjamas","name":"Winter Fleece Pyjamas","price":42,"tag":"","sizes":["XS","S","M","L","XL"],"colors":[{"name":"Grey","hex":"#B7B2B8"},{"name":"Plum","hex":"#7B3F61"}],"desc":"Warm double-sided fleece with cuffed ankles.","img":"","soldOut":false,"sample":true},{"id":"s8","cat":"Pyjamas","name":"Kids Cotton Pyjamas","price":20,"tag":"","sizes":["2-3y","4-5y","6-7y","8-9y"],"colors":[{"name":"Sky","hex":"#B9CCE0"},{"name":"Blush","hex":"#E8B7C8"},{"name":"Sage","hex":"#A9BDA6"}],"desc":"Soft jersey two-piece for children. Pre-washed, tag-free neck.","img":"","soldOut":false,"sample":true},{"id":"s9","cat":"Robes","name":"Waffle Bathrobe","price":45,"tag":"Bestseller","sizes":["S/M","L/XL"],"colors":[{"name":"White","hex":"#F6F4F4"},{"name":"Grey","hex":"#B7B2B8"},{"name":"Sand","hex":"#D9C4A8"}],"desc":"Lightweight waffle cotton, shawl collar, two pockets and a tie belt.","img":"","soldOut":false,"sample":true},{"id":"s10","cat":"Robes","name":"Satin Kimono Robe","price":30,"tag":"","sizes":["One size"],"colors":[{"name":"Plum","hex":"#7B3F61"},{"name":"Blush","hex":"#E8B7C8"},{"name":"Black","hex":"#2B2428"}],"desc":"Mid-length satin robe with wide sleeves.","img":"","soldOut":false,"sample":true},{"id":"s11","cat":"Towels","name":"Bath Towel 70×140","price":18,"tag":"","sizes":[],"colors":[{"name":"White","hex":"#F6F4F4"},{"name":"Grey","hex":"#B7B2B8"},{"name":"Sage","hex":"#A9BDA6"},{"name":"Sand","hex":"#D9C4A8"}],"desc":"500 gsm combed cotton. Absorbent, quick-drying, soft from the first wash.","img":"","soldOut":false,"sample":true},{"id":"s12","cat":"Towels","name":"Hand Towel Set (3)","price":14,"tag":"","sizes":[],"colors":[{"name":"White","hex":"#F6F4F4"},{"name":"Sky","hex":"#B9CCE0"},{"name":"Blush","hex":"#E8B7C8"}],"desc":"Three 40×70 hand towels in one color with a woven border.","img":"","soldOut":false,"sample":true},{"id":"s13","cat":"Towels","name":"Beach Towel 90×170","price":24,"tag":"New","sizes":[],"colors":[{"name":"Sky","hex":"#B9CCE0"},{"name":"Rose","hex":"#D9858F"},{"name":"Sand","hex":"#D9C4A8"}],"desc":"Oversized striped towel, light enough to pack, dries fast in the sun.","img":"","soldOut":false,"sample":true},{"id":"s14","cat":"Bath & home","name":"Bath Mat Set (2)","price":19,"tag":"","sizes":[],"colors":[{"name":"Grey","hex":"#B7B2B8"},{"name":"White","hex":"#F6F4F4"},{"name":"Sand","hex":"#D9C4A8"}],"desc":"Non-slip backing, thick cotton pile. Set of two, large and small.","img":"","soldOut":false,"sample":true},{"id":"s15","cat":"Bath & home","name":"Hair Towel Wrap","price":9,"tag":"","sizes":[],"colors":[{"name":"Blush","hex":"#E8B7C8"},{"name":"White","hex":"#F6F4F4"},{"name":"Sage","hex":"#A9BDA6"}],"desc":"Microfibre turban with a button loop. Cuts drying time.","img":"","soldOut":false,"sample":true}]}</script>
+<script>
+const PRISTINE = document.body.innerHTML;
+const HEAD_STYLE = (document.head.querySelector("style") || {}).textContent || "";
+
+const DEFAULT_SHOP = {
+  name:"Soudain", tagline:"Lingerie & home textiles",
+  headline:"Soft things for slow mornings.",
+  intro:"Lingerie, pyjamas, robes and towels. Pick what you like, send your order on WhatsApp, pay on delivery.",
+  policy:"Pay in cash or by transfer when your parcel arrives. Exchanges within 7 days, unworn with tags.",
+  whatsapp:"96170000000", whatsappShown:"+961 70 000 000", instagram:"soudain",
+  currency:"$", deliveryFee:3, freeOver:60
+};
+const DEFAULT_CATS = ["Lingerie","Pyjamas","Robes","Towels","Bath & home"];
+const COLORS = {blush:"#E8B7C8",ivory:"#F1E8DC",black:"#2B2428",plum:"#7B3F61",sage:"#A9BDA6",sky:"#B9CCE0",grey:"#B7B2B8",white:"#F6F4F4",sand:"#D9C4A8",rose:"#D9858F"};
+const SZ = ["XS","S","M","L","XL"];
+const PRESETS = [{name:"Light beige",hex:"#E6D5BC"},{name:"Dark beige",hex:"#B08F68"},{name:"Black",hex:"#1E1A17"},{name:"White",hex:"#FFFFFF"}];
+
+const ICONS = {
+  "Lingerie":'<svg viewBox="0 0 48 48"><path d="M10 10c1 12 5 22 14 22s13-10 14-22"/><path d="M10 10c4 2 8 3 14 3s10-1 14-3"/><path d="M24 32v8"/></svg>',
+  "Pyjamas":'<svg viewBox="0 0 48 48"><path d="M17 8l-9 6 4 9 5-3v20h14V20l5 3 4-9-9-6c-2 4-5 5-7 5s-5-1-7-5z"/></svg>',
+  "Robes":'<svg viewBox="0 0 48 48"><path d="M17 6l-9 6 3 30h26l3-30-9-6-7 12z"/><path d="M12 28h24"/></svg>',
+  "Towels":'<svg viewBox="0 0 48 48"><rect x="9" y="8" width="30" height="10" rx="2"/><rect x="9" y="19" width="30" height="10" rx="2"/><rect x="9" y="30" width="30" height="10" rx="2"/></svg>',
+  "Bath & home":'<svg viewBox="0 0 48 48"><path d="M24 7c7 9 11 14 11 20a11 11 0 0 1-22 0c0-6 4-11 11-20z"/></svg>'
+};
+const ICON_DEFAULT = '<svg viewBox="0 0 48 48"><path d="M10 16h28l-2 24H12z"/><path d="M18 16a6 6 0 0 1 12 0"/></svg>';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const uid = () => "p" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const cap = k => k.charAt(0).toUpperCase() + k.slice(1);
+
+function sampleProducts(){
+  const col = (...n) => n.map(x => ({name:cap(x),hex:COLORS[x]}));
+  const P = (id,cat,name,price,tag,sizes,colors,desc,extra={}) => Object.assign({id:"s"+id,cat,name,price,tag:tag||"",sizes,colors:col(...colors),desc,img:"",soldOut:false,sample:true},extra);
+  return [
+    P(1,"Lingerie","Lace Bralette Set",28,"New",SZ,["blush","black","ivory"],"Soft stretch lace bralette with matching briefs. Wire-free, light padding."),
+    P(2,"Lingerie","Everyday Cotton Briefs (3 pack)",16,"",SZ,["ivory","black","blush"],"Breathable combed cotton, flat seams, full coverage. Pack of three in one color."),
+    P(3,"Lingerie","Satin Slip Chemise",34,"Bestseller",SZ,["plum","black","blush"],"Fluid satin with adjustable straps and a short lace trim at the hem."),
+    P(4,"Lingerie","Seamless Comfort Bra",22,"",["S","M","L","XL"],["ivory","black","sand"],"One-piece seamless knit, smooth under tops, removable pads."),
+    P(5,"Pyjamas","Cotton Button-Up Pyjama Set",38,"",SZ,["sky","sage","blush"],"Long-sleeve shirt and trousers in brushed cotton. Piped edges, elastic waist."),
+    P(6,"Pyjamas","Satin Shorts Pyjama Set",32,"New",SZ,["rose","black","ivory"],"Camisole top with shorts in washable satin. Cool and light for summer nights."),
+    P(7,"Pyjamas","Winter Fleece Pyjamas",42,"",SZ,["grey","plum"],"Warm double-sided fleece with cuffed ankles."),
+    P(8,"Pyjamas","Kids Cotton Pyjamas",20,"",["2-3y","4-5y","6-7y","8-9y"],["sky","blush","sage"],"Soft jersey two-piece for children. Pre-washed, tag-free neck."),
+    P(9,"Robes","Waffle Bathrobe",45,"Bestseller",["S/M","L/XL"],["white","grey","sand"],"Lightweight waffle cotton, shawl collar, two pockets and a tie belt."),
+    P(10,"Robes","Satin Kimono Robe",30,"",["One size"],["plum","blush","black"],"Mid-length satin robe with wide sleeves."),
+    P(11,"Towels","Bath Towel 70×140",18,"",[],["white","grey","sage","sand"],"500 gsm combed cotton. Absorbent, quick-drying, soft from the first wash."),
+    P(12,"Towels","Hand Towel Set (3)",14,"",[],["white","sky","blush"],"Three 40×70 hand towels in one color with a woven border."),
+    P(13,"Towels","Beach Towel 90×170",24,"New",[],["sky","rose","sand"],"Oversized striped towel, light enough to pack, dries fast in the sun."),
+    P(14,"Bath & home","Bath Mat Set (2)",19,"",[],["grey","white","sand"],"Non-slip backing, thick cotton pile. Set of two, large and small."),
+    P(15,"Bath & home","Hair Towel Wrap",9,"",[],["blush","white","sage"],"Microfibre turban with a button loop. Cuts drying time.")
+  ];
+}
+
+/* ---- state: this page is the record; saving republishes it with the data embedded above ---- */
+let DATA = null;
+try { DATA = JSON.parse($("#shop-data").textContent); } catch(e) {}
+let shop = Object.assign({}, DEFAULT_SHOP, DATA && DATA.shop);
+let cats = (DATA && DATA.categories && DATA.categories.length) ? DATA.categories.slice() : DEFAULT_CATS.slice();
+let products = (DATA && Array.isArray(DATA.products)) ? DATA.products : sampleProducts();
+let filter = "All", isOwner = false, cart = [];
+try { cart = JSON.parse(localStorage.getItem("md_cart") || "[]"); } catch(e) { cart = []; }
+cart = cart.filter(l => l && products.some(p => p.id === l.id));
+const saveCart = () => { try { localStorage.setItem("md_cart", JSON.stringify(cart)); } catch(e) {} };
+
+const money = n => shop.currency + (Math.round(n*100)/100).toString();
+const prod = id => products.find(p => p.id === id);
+const colorsOf = p => Array.isArray(p.colors) ? p.colors : [];
+const sizesOf = p => Array.isArray(p.sizes) ? p.sizes : [];
+
+function tile(p, extra=""){
+  const i = Math.max(0, cats.indexOf(p.cat)) % 5 + 1;
+  const inner = p.img ? `<img src="${esc(p.img)}" alt="${esc(p.name)}">` : (ICONS[p.cat] || ICON_DEFAULT);
+  return `<div class="tile" style="background:var(--t${i})">${inner}${extra}</div>`;
+}
+function tagOf(p){ return p.soldOut ? `<span class="tag">Sold out</span>` : (p.tag ? `<span class="tag">${esc(p.tag)}</span>` : ""); }
+
+function renderShell(){
+  $("#bn").textContent = shop.name;
+  $("#tagline").textContent = shop.tagline;
+  $("#headline").textContent = shop.headline;
+  $("#introp").textContent = shop.intro;
+  $("#policy").textContent = shop.policy;
+  $("#footnote").textContent = `Questions? Message us on Instagram @${shop.instagram} or WhatsApp ${shop.whatsappShown}. Photos show sample colors and may vary slightly.`;
+}
+function renderChips(){
+  $("#chips").innerHTML = ["All",...cats].map(c => `<button class="chip" data-c="${esc(c)}" aria-pressed="${c===filter}">${esc(c)}</button>`).join("");
+}
+function renderGrid(){
+  const list = products.filter(p => filter==="All" || p.cat===filter);
+  $("#grid").innerHTML = list.length ? list.map(p => `
+    <button class="card" data-id="${esc(p.id)}">
+      ${tile(p, tagOf(p))}
+      <h3>${esc(p.name)}</h3>
+      <div class="row"><span class="price">${money(p.price)}</span>
+        <span class="dots">${colorsOf(p).map(c=>`<i class="dot" style="background:${esc(c.hex)}"></i>`).join("")}</span></div>
+    </button>`).join("") : `<p class="empty">Nothing here yet.</p>`;
+}
+function updateCount(){ $("#count").textContent = cart.reduce((a,l)=>a+l.qty,0); }
+
+const L = $("#layer");
+function closeLayer(){ L.innerHTML = ""; L.onclick = L.oninput = L.onchange = null; }
+function paint(html){
+  const old = L.querySelector(".panel"), st = old ? old.scrollTop : 0;
+  L.innerHTML = html;
+  const np = L.querySelector(".panel"); if(np) np.scrollTop = st;
+}
+let tt;
+function toast(msg){
+  document.querySelectorAll(".toast").forEach(n=>n.remove());
+  const d = document.createElement("div"); d.className="toast"; d.textContent=msg; d.setAttribute("role","status");
+  document.body.appendChild(d); clearTimeout(tt); tt=setTimeout(()=>d.remove(),2600);
+}
+
+/* ---- customer: product sheet ---- */
+function openProduct(id){
+  const p = prod(id); if(!p) return;
+  const cs = colorsOf(p), ss = sizesOf(p);
+  let color = cs.length ? cs[0].name : "", size = ss.length ? ss[0] : "";
+  const draw = () => {
+    paint(`<div class="scrim" data-close></div>
+    <div class="panel sheet" role="dialog" aria-label="${esc(p.name)}">
+      <button class="x" data-close aria-label="Close">×</button>
+      ${tile(p)}
+      <div class="row"><h2 style="padding:0">${esc(p.name)}</h2><span class="price" style="font-size:18px">${money(p.price)}</span></div>
+      <p style="color:var(--muted);margin:6px 0 0">${esc(p.desc)}</p>
+      ${cs.length ? `<div class="lbl">Color · ${esc(color)}</div>
+      <div class="opts">${cs.map((c,i)=>`<button class="opt swatch" data-color="${i}" aria-pressed="${c.name===color}"><i class="dot" style="background:${esc(c.hex)}"></i>${esc(c.name)}</button>`).join("")}</div>` : ""}
+      ${ss.length ? `<div class="lbl">Size</div><div class="opts">${ss.map((s,i)=>`<button class="opt" data-size="${i}" aria-pressed="${s===size}">${esc(s)}</button>`).join("")}</div>` : ""}
+      ${p.soldOut ? `<button class="btn" disabled>Sold out</button>` : `<button class="btn" id="add">Add to bag · ${money(p.price)}</button>`}
+    </div>`);
+  };
+  draw();
+  L.onclick = e => {
+    const t = e.target.closest("button,[data-close]"); if(!t) return;
+    if(t.dataset.close !== undefined){ closeLayer(); return; }
+    if(t.dataset.color !== undefined){ color = cs[+t.dataset.color].name; draw(); }
+    else if(t.dataset.size !== undefined){ size = ss[+t.dataset.size]; draw(); }
+    else if(t.id==="add"){
+      const f = cart.find(l => l.id===id && l.color===color && l.size===size);
+      if(f) f.qty++; else cart.push({id,color,size,qty:1});
+      saveCart(); updateCount(); closeLayer(); toast(`${p.name} added to your bag`);
+    }
+  };
+}
+
+/* ---- customer: bag and checkout ---- */
+function totals(){
+  const sub = cart.reduce((a,l)=>{ const p = prod(l.id); return a + (p?p.price*l.qty:0); }, 0);
+  const free = shop.freeOver>0 && sub>=shop.freeOver;
+  const ship = cart.length ? (free ? 0 : +shop.deliveryFee||0) : 0;
+  return {sub, ship, total: sub+ship};
+}
+function orderText(){
+  const t = totals(), g = id => (($("#"+id))||{}).value||"";
+  const lines = cart.map(l => { const p = prod(l.id);
+    const opt = [l.color,l.size].filter(Boolean).join(", ");
+    return `• ${l.qty} × ${p.name}${opt?" ("+opt+")":""} — ${money(p.price*l.qty)}`; });
+  return `Hello ${shop.name}, I would like to order:\n${lines.join("\n")}\n\nSubtotal: ${money(t.sub)}\nDelivery: ${t.ship?money(t.ship):"Free"}\nTotal: ${money(t.total)}\n\nName: ${g("fName")}\nPhone: ${g("fPhone")}\nAddress: ${g("fAddr")}\nNotes: ${g("fNote")}`;
+}
+function openBag(){
+  const draw = keep => {
+    const t = totals();
+    const vals = keep ? ["fName","fPhone","fAddr","fNote"].map(i=>(($("#"+i))||{}).value||"") : ["","","",""];
+    paint(`<div class="scrim" data-close></div>
+    <div class="panel" role="dialog" aria-label="Your bag">
+      <button class="x" data-close aria-label="Close">×</button>
+      <h2>Your bag</h2>
+      ${cart.length ? cart.map((l,i)=>{ const p = prod(l.id); return `
+        <div class="line">${tile(p)}
+          <div><b>${esc(p.name)}</b><small>${esc([l.color,l.size].filter(Boolean).join(" · "))}</small>
+            <div class="qty"><button data-dec="${i}" aria-label="Fewer">−</button><span>${l.qty}</span><button data-inc="${i}" aria-label="More">+</button></div></div>
+          <span class="price">${money(p.price*l.qty)}</span></div>`}).join("") : `<p class="empty">Your bag is empty.</p>`}
+      ${cart.length ? `
+      <div class="sum"><div><span>Subtotal</span><span>${money(t.sub)}</span></div>
+        <div><span>Delivery</span><span>${t.ship?money(t.ship):"Free"}</span></div>
+        <div class="tot"><span>Total</span><span>${money(t.total)}</span></div></div>
+      <label class="f" for="fName">Your name<input id="fName" autocomplete="name" value="${esc(vals[0])}"></label>
+      <label class="f" for="fPhone">Phone number<input id="fPhone" type="text" inputmode="tel" autocomplete="tel" value="${esc(vals[1])}"></label>
+      <label class="f" for="fAddr">Delivery address (area, street, building, floor)<textarea id="fAddr" rows="2" autocomplete="street-address">${esc(vals[2])}</textarea></label>
+      <label class="f" for="fNote">Notes (optional)<input id="fNote" value="${esc(vals[3])}"></label>
+      <a class="btn" id="wa" target="_blank" rel="noopener" href="#" aria-disabled="true">Send order on WhatsApp</a>
+      <a class="btn alt" target="_blank" rel="noopener" href="https://ig.me/m/${esc(shop.instagram)}">Message us on Instagram instead</a>
+      <button class="btn alt" id="copy">Copy order text</button>
+      <p class="note">${esc(shop.policy)} We confirm your order on WhatsApp (${esc(shop.whatsappShown)}).</p>` : ""}
+    </div>`);
+    syncWa();
+  };
+  const syncWa = () => {
+    const wa = $("#wa"); if(!wa) return;
+    const ready = $("#fName").value.trim() && $("#fPhone").value.trim() && $("#fAddr").value.trim();
+    wa.setAttribute("aria-disabled", ready ? "false" : "true");
+    wa.href = ready ? `https://wa.me/${String(shop.whatsapp).replace(/\D/g,"")}?text=${encodeURIComponent(orderText())}` : "#";
+  };
+  draw(false);
+  L.oninput = syncWa;
+  L.onclick = e => {
+    const t = e.target.closest("button,[data-close]"); if(!t) return;
+    if(t.dataset.close !== undefined){ closeLayer(); return; }
+    if(t.dataset.inc !== undefined){ cart[+t.dataset.inc].qty++; }
+    else if(t.dataset.dec !== undefined){ const l = cart[+t.dataset.dec]; l.qty--; if(l.qty<1) cart.splice(+t.dataset.dec,1); }
+    else if(t.id==="copy"){
+      const txt = orderText();
+      const fb = () => { const ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");toast("Order copied");}catch(_){toast("Select and copy the text manually");} ta.remove(); };
+      if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>toast("Order copied"),fb); else fb();
+      return;
+    } else return;
+    saveCart(); updateCount(); draw(true);
+  };
+}
+
+/* ---- owner: save by republishing this page with the data embedded ---- */
+function readImage(file){
+  return new Promise((res,rej)=>{
+    const fr = new FileReader(); fr.onerror = rej;
+    fr.onload = () => { const im = new Image(); im.onerror = rej;
+      im.onload = () => { const s = Math.min(1, 900/Math.max(im.width,im.height));
+        const cv = document.createElement("canvas"); cv.width = Math.round(im.width*s); cv.height = Math.round(im.height*s);
+        cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height); res(cv.toDataURL("image/jpeg",.8)); };
+      im.src = fr.result; };
+    fr.readAsDataURL(file);
+  });
+}
+async function persist(){
+  let art = null;
+  try { art = window.claude && await claude.use("artifact"); } catch(e) {}
+  if(!art){ toast("Saving is not available in this view."); return false; }
+  const json = JSON.stringify({v:1,shop,categories:cats,products}).replace(/</g,"\\u003c");
+  if(json.length > 13e6){ toast("Too many photos for one page. Remove a few products or photos."); return false; }
+  const t = document.createElement("template"); t.innerHTML = PRISTINE;
+  t.content.getElementById("shop-data").textContent = json;
+  const html = '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>' + HEAD_STYLE + '</style></head><body>' + t.innerHTML + '</body></html>';
+  try { location.hash = "admin"; await art.publish(html); return true; }
+  catch(e){
+    const c = e && e.code;
+    toast(c==="conflict" ? "Someone saved at the same time. The page is reloading." : (c==="not_granted"||c==="not_writer") ? "You do not have permission to edit this shop." : "Could not save. Please try again.");
+    return false;
+  }
+}
+
+function openManage(startView){
+  let view = startView || "list", draft = null, sdraft = null, err = "", confirmDel = false, confirmSamples = false, busy = false;
+  const blank = () => ({id:"",name:"",cat:cats[0]||"",price:"",tag:"",desc:"",colors:[{name:"",hex:"#E8B7C8"}],sizes:"",img:"",soldOut:false});
+
+  const listView = () => `
+    <h2>Manage shop</h2>
+    <p class="note">Changes go live for everyone as soon as you save.</p>
+    <div class="two"><button class="btn" data-act="add">Add product</button><button class="btn alt" data-act="settings">Shop settings</button></div>
+    ${products.some(p=>p.sample) ? `<div class="notice"><span>Sample products are showing.</span><button class="mini" data-act="clearsamples">${confirmSamples?"Tap again to remove them":"Remove sample products"}</button></div>` : ""}
+    <div style="margin-top:10px">${products.length ? products.map(p=>`
+      <div class="line">${tile(p)}<div><b>${esc(p.name)}</b><small>${money(p.price)} · ${esc(p.cat)}${p.soldOut?" · Sold out":""}</small></div>
+      <button class="mini" data-edit="${esc(p.id)}">Edit</button></div>`).join("") : `<p class="empty">No products yet. Tap Add product.</p>`}</div>`;
+
+  const formView = () => `
+    <h2>${draft.id ? "Edit product" : "New product"}</h2>
+    <label class="f" for="pName">Name<input id="pName" data-f="name" value="${esc(draft.name)}" placeholder="Satin Slip Chemise"></label>
+    <div class="grid2">
+      <label class="f" for="pCat">Category<select id="pCat" data-f="cat">${cats.map(c=>`<option ${c===draft.cat?"selected":""}>${esc(c)}</option>`).join("")}</select></label>
+      <label class="f" for="pPrice">Price (${esc(shop.currency)})<input id="pPrice" data-f="price" inputmode="decimal" value="${esc(draft.price)}" placeholder="25"></label>
+    </div>
+    <label class="f" for="pTag">Label on the photo (optional)<input id="pTag" data-f="tag" value="${esc(draft.tag)}" placeholder="New, Bestseller, Sale"></label>
+    <label class="f" for="pDesc">Description<textarea id="pDesc" data-f="desc" rows="3" placeholder="Fabric, fit, care">${esc(draft.desc)}</textarea></label>
+    <div class="lbl">Photo</div>
+    <div class="photo">${tile({cat:draft.cat,name:draft.name,img:draft.img})}
+      <div><input id="pPhoto" type="file" accept="image/*" style="margin:0">${draft.img?`<button class="mini" data-act="clearphoto" style="margin-top:8px">Remove photo</button>`:""}</div></div>
+    <div class="lbl">Colors</div>
+    ${draft.colors.map((c,i)=>`<div class="crow"><input type="color" data-ci="${i}" data-k="hex" value="${esc(c.hex)}" aria-label="Color ${i+1}"><input data-ci="${i}" data-k="name" value="${esc(c.name)}" placeholder="Color name" aria-label="Color name ${i+1}"><button data-delc="${i}" aria-label="Remove color">×</button></div>`).join("")}
+    <div class="lbl" style="margin-top:12px">Quick colors</div>
+    <div class="sizes">${PRESETS.map((c,i)=>`<button class="mini swatch" data-preset="${i}"><i class="dot" style="background:${c.hex}"></i>${c.name}</button>`).join("")}</div>
+    <button class="mini" data-act="addcolor" style="margin-top:10px">Add another color</button>
+    <label class="f" for="pSizes">Sizes (separate with commas, leave empty if none)<input id="pSizes" data-f="sizes" value="${esc(draft.sizes)}" placeholder="S, M, L"></label>
+    <div class="sizes"><button class="mini" data-sz="XS, S, M, L, XL">XS to XL</button><button class="mini" data-sz="36, 38, 40, 42">36 to 42</button><button class="mini" data-sz="One size">One size</button><button class="mini" data-sz="">No sizes</button></div>
+    <label class="chk"><input type="checkbox" data-f="soldOut" ${draft.soldOut?"checked":""}>Sold out</label>
+    ${err ? `<p class="err">${esc(err)}</p>` : ""}
+    <button class="btn" data-act="save" ${busy?"disabled":""}>${busy?"Saving…":"Save product"}</button>
+    <button class="btn alt" data-act="back">Cancel</button>
+    ${draft.id ? `<button class="btn alt danger" data-act="del">${confirmDel?"Tap again to delete for good":"Delete product"}</button>` : ""}`;
+
+  const settingsView = () => {
+    const f = (k,label,ph="") => `<label class="f" for="s_${k}">${label}<input id="s_${k}" data-s="${k}" value="${esc(sdraft[k])}" placeholder="${esc(ph)}"></label>`;
+    return `<h2>Shop settings</h2>
+    ${f("name","Shop name")}${f("tagline","Line under the name")}${f("headline","Headline on the front page")}
+    <label class="f" for="s_intro">Short intro<textarea id="s_intro" data-s="intro" rows="2">${esc(sdraft.intro)}</textarea></label>
+    ${f("whatsapp","WhatsApp number for orders (country code, digits only)","96170123456")}
+    ${f("whatsappShown","WhatsApp number as shown to customers","+961 70 123 456")}
+    ${f("instagram","Instagram handle (without @)")}
+    <div class="grid2">${f("currency","Currency symbol","$")}${f("deliveryFee","Delivery fee","3")}</div>
+    ${f("freeOver","Free delivery above (0 for never)","60")}
+    <label class="f" for="s_policy">Payment and returns note<textarea id="s_policy" data-s="policy" rows="2">${esc(sdraft.policy)}</textarea></label>
+    <label class="f" for="s_cats">Categories, one per line<textarea id="s_cats" data-s="cats" rows="5">${esc(sdraft.cats)}</textarea></label>
+    ${err ? `<p class="err">${esc(err)}</p>` : ""}
+    <button class="btn" data-act="savesettings" ${busy?"disabled":""}>${busy?"Saving…":"Save settings"}</button>
+    <button class="btn alt" data-act="back">Cancel</button>`;
+  };
+
+  const draw = () => paint(`<div class="scrim" data-close></div><div class="panel" role="dialog" aria-label="Manage shop"><button class="x" data-close aria-label="Close">×</button>${view==="list"?listView():view==="form"?formView():settingsView()}</div>`);
+  const toForm = p => { draft = p ? {id:p.id,name:p.name,cat:p.cat,price:String(p.price),tag:p.tag||"",desc:p.desc||"",colors:colorsOf(p).map(c=>({name:c.name,hex:c.hex})),sizes:sizesOf(p).join(", "),img:p.img||"",soldOut:!!p.soldOut} : blank();
+    if(!draft.colors.length) draft.colors.push({name:"",hex:"#E8B7C8"}); view="form"; err=""; confirmDel=false; };
+
+  async function saveProduct(){
+    const price = parseFloat(String(draft.price).replace(",","."));
+    if(!draft.name.trim()){ err="Enter a name."; draw(); return; }
+    if(!(price>=0)){ err="Enter a price, for example 25."; draw(); return; }
+    const item = {id:draft.id||uid(),cat:draft.cat,name:draft.name.trim(),price,tag:draft.tag.trim(),desc:draft.desc.trim(),
+      colors:draft.colors.filter(c=>c.name.trim()).map(c=>({name:c.name.trim(),hex:c.hex})),
+      sizes:draft.sizes.split(",").map(s=>s.trim()).filter(Boolean),img:draft.img,soldOut:!!draft.soldOut};
+    const before = products.slice();
+    const i = products.findIndex(p=>p.id===item.id);
+    if(i>=0) products[i]=item; else products.unshift(item);
+    busy=true; err=""; draw();
+    if(!await persist()){ products=before; busy=false; draw(); }
+  }
+  async function saveSettings(){
+    const s = sdraft, list = s.cats.split("\n").map(x=>x.trim()).filter(Boolean);
+    if(!s.name.trim()){ err="Enter a shop name."; draw(); return; }
+    if(!list.length){ err="Add at least one category."; draw(); return; }
+    const bs = shop, bc = cats;
+    shop = Object.assign({}, shop, {name:s.name.trim(),tagline:s.tagline.trim(),headline:s.headline.trim(),intro:s.intro.trim(),policy:s.policy.trim(),
+      whatsapp:s.whatsapp.replace(/\D/g,""),whatsappShown:s.whatsappShown.trim(),instagram:s.instagram.replace(/^@/,"").trim(),
+      currency:s.currency.trim()||"$",deliveryFee:parseFloat(s.deliveryFee)||0,freeOver:parseFloat(s.freeOver)||0});
+    cats = list; busy=true; err=""; draw();
+    if(!await persist()){ shop=bs; cats=bc; busy=false; draw(); }
+  }
+
+  draw();
+  L.oninput = e => {
+    const d = e.target.dataset;
+    if(d.f && draft) draft[d.f] = e.target.type==="checkbox" ? e.target.checked : e.target.value;
+    else if(d.ci !== undefined && draft) draft.colors[+d.ci][d.k] = e.target.value;
+    else if(d.s && sdraft) sdraft[d.s] = e.target.value;
+  };
+  L.onchange = async e => {
+    if(e.target.id !== "pPhoto" || !e.target.files[0]) return;
+    try { draft.img = await readImage(e.target.files[0]); err=""; } catch(x){ err="Could not read that image. Try a JPG or PNG."; }
+    draw();
+  };
+  L.onclick = async e => {
+    const t = e.target.closest("button,[data-close]"); if(!t || busy) return;
+    const d = t.dataset;
+    if(d.close !== undefined){ closeLayer(); if(location.hash==="#admin") location.hash=""; return; }
+    if(d.edit){ toForm(prod(d.edit)); draw(); return; }
+    if(d.delc !== undefined){ draft.colors.splice(+d.delc,1); draw(); return; }
+    if(d.sz !== undefined){ draft.sizes = d.sz; draw(); return; }
+    if(d.preset !== undefined){ const pr = PRESETS[+d.preset], last = draft.colors[draft.colors.length-1];
+      if(last && !last.name.trim()){ last.name = pr.name; last.hex = pr.hex; } else draft.colors.push({name:pr.name,hex:pr.hex}); draw(); return; }
+    switch(d.act){
+      case "add": toForm(null); draw(); break;
+      case "back": view="list"; err=""; confirmDel=false; draw(); break;
+      case "settings": sdraft = Object.assign({}, shop, {cats:cats.join("\n")}); sdraft.deliveryFee=String(shop.deliveryFee); sdraft.freeOver=String(shop.freeOver); view="settings"; err=""; draw(); break;
+      case "addcolor": draft.colors.push({name:"",hex:"#E8B7C8"}); draw(); break;
+      case "clearphoto": draft.img=""; draw(); break;
+      case "save": await saveProduct(); break;
+      case "savesettings": await saveSettings(); break;
+      case "del":
+        if(!confirmDel){ confirmDel=true; draw(); break; }
+        { const before = products.slice(); products = products.filter(p=>p.id!==draft.id); cart = cart.filter(l=>l.id!==draft.id); saveCart();
+          busy=true; draw(); if(!await persist()){ products=before; busy=false; draw(); } }
+        break;
+      case "clearsamples":
+        if(!confirmSamples){ confirmSamples=true; draw(); break; }
+        { const before = products.slice(); products = products.filter(p=>!p.sample); busy=true; draw();
+          if(!await persist()){ products=before; busy=false; confirmSamples=false; draw(); } }
+        break;
+    }
+  };
+}
+
+$("#chips").onclick = e => { const b = e.target.closest(".chip"); if(!b) return; filter=b.dataset.c; renderChips(); renderGrid(); };
+$("#grid").onclick = e => { const c = e.target.closest(".card"); if(c) openProduct(c.dataset.id); };
+$("#openBag").onclick = openBag;
+$("#openManage").onclick = () => openManage("list");
+document.addEventListener("keydown", e => { if(e.key==="Escape") closeLayer(); });
+renderShell(); renderChips(); renderGrid(); updateCount();
+
+(async () => {
+  try {
+    if(!(window.claude && claude.use)) return;
+    const user = await claude.use("user"), art = await claude.use("artifact");
+    if(user && art && user.canEdit()){
+      isOwner = true; $("#ownerbar").hidden = false;
+      if(location.hash === "#admin") openManage("list");
+    }
+  } catch(e) {}
+})();
+</script></body></html>
